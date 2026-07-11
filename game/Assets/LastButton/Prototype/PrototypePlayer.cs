@@ -10,6 +10,8 @@ namespace LastButton.Prototype
         [SerializeField] private float interactDistance = 3f;
         [SerializeField] private float pushForce = 7f;
         [SerializeField] private float maxSprintEnergy = 4f;
+        [SerializeField] private float pushChargeSpeed = 13f;
+        [SerializeField] private float pushChargeDuration = 0.32f;
 
         private CharacterController controller;
         private Camera viewCamera;
@@ -21,6 +23,10 @@ namespace LastButton.Prototype
         private Vector3 knockbackVelocity;
         private float pushImmuneUntil;
         private float sprintEnergy;
+        private float pushChargeRemaining;
+        private float pushCooldownUntil;
+        private float pushRecoveryUntil;
+        private Vector3 pushChargeDirection;
         private PrototypeInteractionTarget activeTarget;
         private float holdTime;
 
@@ -29,6 +35,7 @@ namespace LastButton.Prototype
         public string DisplayName { get; private set; } = "PLAYER";
         public float Sprint01 => maxSprintEnergy <= 0f ? 0f : sprintEnergy / maxSprintEnergy;
         public int SabotageCharges => CarriedKeycard != null && CarriedKeycard.SabotageAvailable ? 1 : 0;
+        public bool IsPushCharging => pushChargeRemaining > 0f;
         public string CurrentPrompt { get; private set; }
         public float InteractionProgress01 { get; private set; }
 
@@ -66,7 +73,17 @@ namespace LastButton.Prototype
 
             if (PrototypeState.Instance == null || PrototypeState.Instance.Outcome == PrototypeOutcome.None)
             {
-                if (botControlled)
+                if (pushChargeRemaining > 0f)
+                {
+                    UpdatePushCharge();
+                    ResetInteraction();
+                }
+                else if (Time.time < pushRecoveryUntil)
+                {
+                    UpdateMovement(Vector3.zero);
+                    ResetInteraction();
+                }
+                else if (botControlled)
                 {
                     UpdateMovement(botMoveInput);
                 }
@@ -121,6 +138,22 @@ namespace LastButton.Prototype
             {
                 PrototypeState.Instance?.Announce($"{DisplayName}이(가) {target.DisplayName}을(를) 밀쳤습니다.");
             }
+        }
+
+        public bool TryStartPushCharge(Vector3 direction)
+        {
+            Vector3 planarDirection = new Vector3(direction.x, 0f, direction.z).normalized;
+            if (planarDirection.sqrMagnitude < 0.5f
+                || Time.time < pushCooldownUntil
+                || pushChargeRemaining > 0f)
+            {
+                return false;
+            }
+
+            pushChargeDirection = planarDirection;
+            pushChargeRemaining = pushChargeDuration;
+            pushCooldownUntil = Time.time + 2.5f;
+            return true;
         }
 
         public bool UseSabotage()
@@ -243,6 +276,41 @@ namespace LastButton.Prototype
             controller.Move(velocity * Time.deltaTime);
         }
 
+        private void UpdatePushCharge()
+        {
+            float distance = pushChargeSpeed * Time.deltaTime;
+            Vector3 origin = transform.position + Vector3.up * 0.9f + pushChargeDirection * 0.8f;
+            Ray ray = new Ray(origin, pushChargeDirection);
+
+            if (Physics.SphereCast(ray, 0.38f, out RaycastHit hit, distance + 0.25f))
+            {
+                PrototypePlayer otherPlayer = hit.collider.GetComponentInParent<PrototypePlayer>();
+                if (otherPlayer != null && otherPlayer != this)
+                {
+                    PushOther(otherPlayer);
+                }
+                else
+                {
+                    Rigidbody body = hit.collider.attachedRigidbody;
+                    if (body != null && !body.isKinematic)
+                    {
+                        body.AddForce(pushChargeDirection * pushForce, ForceMode.Impulse);
+                    }
+                }
+
+                pushChargeRemaining = 0f;
+                pushRecoveryUntil = Time.time + 0.35f;
+                return;
+            }
+
+            controller.Move(pushChargeDirection * distance);
+            pushChargeRemaining -= Time.deltaTime;
+            if (pushChargeRemaining <= 0f)
+            {
+                pushRecoveryUntil = Time.time + 0.65f;
+            }
+        }
+
         private void UpdateInteraction()
         {
             PrototypeInteractionTarget target = FindInteractionTarget();
@@ -282,27 +350,9 @@ namespace LastButton.Prototype
                 UseSabotage();
             }
 
-            if (!Input.GetKeyDown(KeyCode.Q))
+            if (Input.GetKeyDown(KeyCode.Q))
             {
-                return;
-            }
-
-            Ray ray = new Ray(viewCamera.transform.position, viewCamera.transform.forward);
-            if (!Physics.SphereCast(ray, 0.3f, out RaycastHit hit, 2.2f))
-            {
-                return;
-            }
-
-            PrototypePlayer otherPlayer = hit.collider.GetComponentInParent<PrototypePlayer>();
-            if (otherPlayer != null && otherPlayer != this)
-            {
-                PushOther(otherPlayer);
-            }
-
-            Rigidbody body = hit.collider.attachedRigidbody;
-            if (body != null && !body.isKinematic)
-            {
-                body.AddForce(viewCamera.transform.forward * pushForce, ForceMode.Impulse);
+                TryStartPushCharge(viewCamera.transform.forward);
             }
         }
 

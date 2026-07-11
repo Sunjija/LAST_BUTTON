@@ -80,9 +80,24 @@ namespace LastButton.Prototype
             CreateZone("EXECUTIVE", new Vector3(16f, 0.03f, -12f), new Color(0.3f, 0.22f, 0.04f), parent);
             CreateZone("ESCAPE POD", new Vector3(16f, 0.03f, 9f), new Color(0.32f, 0.04f, 0.05f), parent);
 
+            Color bulkheadColor = new Color(0.09f, 0.11f, 0.15f);
+            CreateBlock("Left Bulkhead South", new Vector3(-8f, 1.5f, -18f), new Vector3(1f, 3f, 8f), bulkheadColor, parent);
+            CreateBlock("Left Bulkhead Mid", new Vector3(-8f, 1.5f, -4f), new Vector3(1f, 3f, 12f), bulkheadColor, parent);
+            CreateBlock("Left Bulkhead North", new Vector3(-8f, 1.5f, 16f), new Vector3(1f, 3f, 12f), bulkheadColor, parent);
+
+            CreateBlock("Right Bulkhead South", new Vector3(8f, 1.5f, -18f), new Vector3(1f, 3f, 8f), bulkheadColor, parent);
+            CreateBlock("Right Bulkhead Mid", new Vector3(8f, 1.5f, 0f), new Vector3(1f, 3f, 16f), bulkheadColor, parent);
+            CreateBlock("Right Bulkhead North", new Vector3(8f, 1.5f, 17f), new Vector3(1f, 3f, 10f), bulkheadColor, parent);
+
+            CreateBlock("Center Cross Bulkhead", new Vector3(0f, 1.5f, 0f), new Vector3(8f, 3f, 1f), bulkheadColor, parent);
+            CreateBlock("Left Cross Bulkhead A", new Vector3(-19f, 1.5f, 0f), new Vector3(6f, 3f, 1f), bulkheadColor, parent);
+            CreateBlock("Left Cross Bulkhead B", new Vector3(-11f, 1.5f, 0f), new Vector3(2f, 3f, 1f), bulkheadColor, parent);
+            CreateBlock("Right Cross Bulkhead A", new Vector3(11f, 1.5f, 0f), new Vector3(6f, 3f, 1f), bulkheadColor, parent);
+            CreateBlock("Right Cross Bulkhead B", new Vector3(20f, 1.5f, 0f), new Vector3(4f, 3f, 1f), bulkheadColor, parent);
+
             CreateBlock("Escape Cover West", new Vector3(12f, 1.5f, 9f), new Vector3(1f, 3f, 6f), new Color(0.11f, 0.13f, 0.17f), parent);
             CreateBlock("Escape Cover East", new Vector3(20f, 1.5f, 12f), new Vector3(1f, 3f, 6f), new Color(0.11f, 0.13f, 0.17f), parent);
-            CreateBlock("Escape Cover Center", new Vector3(15f, 1.5f, 13f), new Vector3(4f, 3f, 1f), new Color(0.11f, 0.13f, 0.17f), parent);
+            CreateBlock("Escape Cover Center", new Vector3(16f, 1.5f, 13f), new Vector3(1.5f, 3f, 1.5f), new Color(0.11f, 0.13f, 0.17f), parent);
         }
 
         private static PrototypePlayer CreatePlayer(Transform parent)

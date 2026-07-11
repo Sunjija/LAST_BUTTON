@@ -7,6 +7,11 @@
 - [통합 게임 기획서 v0.2](outputs/LAST_BUTTON_통합게임기획서_v0.2.md)
 - [초기 게임 기획서 v0.1](outputs/LAST_BUTTON_게임기획서_v0.1.md)
 
+## 프로토타입
+
+- [Unity 회색 박스 프로토타입](game/README.md)
+- Unity 6.3 LTS에서 `game` 폴더를 열고 빈 Scene에서 Play하면 테스트 공간이 자동 생성됩니다.
+
 ## 현재 방향
 
 - Unity 6 LTS 기반 스타일라이즈드 3D

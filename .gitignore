@@ -2,3 +2,20 @@ work/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Unity generated files
+game/[Ll]ibrary/
+game/[Tt]emp/
+game/[Oo]bj/
+game/[Bb]uild/
+game/[Bb]uilds/
+game/[Ll]ogs/
+game/[Uu]ser[Ss]ettings/
+game/MemoryCaptures/
+game/Recordings/
+game/*.csproj
+game/*.sln
+game/*.user
+
+# Local playable builds
+outputs/LAST_BUTTON_Prototype/

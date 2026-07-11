@@ -38,7 +38,8 @@ namespace LastButton.Prototype
 
         public override void Complete(PrototypePlayer actor)
         {
-            if (PrototypeState.Instance.AddRepair(repairAmount))
+            float appliedAmount = actor.IsBot ? repairAmount * 0.2f : repairAmount;
+            if (PrototypeState.Instance.AddRepair(appliedAmount))
             {
                 readyAt = Time.time + cooldown;
             }
@@ -51,8 +52,10 @@ namespace LastButton.Prototype
         private Rigidbody body;
         private Collider keycardCollider;
         private bool carried;
+        private float pickupReadyAt;
 
         public override float HoldSeconds => 0.25f;
+        public bool IsCarried => carried;
 
         private void Awake()
         {
@@ -64,6 +67,7 @@ namespace LastButton.Prototype
         {
             return !carried
                 && actor.CarriedKeycard == null
+                && Time.time >= pickupReadyAt
                 && PrototypeState.Instance != null
                 && PrototypeState.Instance.Outcome == PrototypeOutcome.None
                 && PrototypeState.Instance.RepairProgress >= 0.4f;
@@ -99,6 +103,7 @@ namespace LastButton.Prototype
             transform.SetParent(PrototypeBootstrap.WorldRoot, true);
             transform.position = position;
             carried = false;
+            pickupReadyAt = Time.time + 2.5f;
             keycardCollider.enabled = true;
             body.isKinematic = false;
             body.linearVelocity = Vector3.zero;

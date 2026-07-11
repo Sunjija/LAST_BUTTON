@@ -7,7 +7,8 @@ namespace LastButton.Prototype
     {
         None,
         CommonEscape,
-        SoloEscape
+        SoloEscape,
+        Failure
     }
 
     public sealed class PrototypeState : MonoBehaviour
@@ -15,10 +16,14 @@ namespace LastButton.Prototype
         public static PrototypeState Instance { get; private set; }
 
         public float RepairProgress { get; private set; } = 0.2f;
+        public float TimeRemaining { get; private set; } = 360f;
         public bool PodCharged { get; private set; }
         public bool KeycardWasTaken { get; private set; }
+        public float KeycardTakenAt { get; private set; } = -1f;
         public PrototypeOutcome Outcome { get; private set; }
         public string LastAnnouncement { get; private set; } = "함선 복구를 시작하십시오.";
+        public int CommonReward => Mathf.RoundToInt(1000f + RepairProgress * 3000f);
+        public int SoloReward => Mathf.RoundToInt(1500f + RepairProgress * 4500f);
 
         public event Action Changed;
 
@@ -38,6 +43,21 @@ namespace LastButton.Prototype
             if (Instance == this)
             {
                 Instance = null;
+            }
+        }
+
+        private void Update()
+        {
+            if (Outcome != PrototypeOutcome.None)
+            {
+                return;
+            }
+
+            TimeRemaining = Mathf.Max(0f, TimeRemaining - Time.deltaTime);
+            if (TimeRemaining <= 0f)
+            {
+                Outcome = PrototypeOutcome.Failure;
+                Announce("제한 시간 종료. 함선 복구에 실패했습니다.");
             }
         }
 
@@ -63,6 +83,7 @@ namespace LastButton.Prototype
             }
 
             KeycardWasTaken = true;
+            KeycardTakenAt = Time.time;
             Announce("간부용 키카드가 보안함에서 제거되었습니다.");
         }
 
@@ -106,6 +127,7 @@ namespace LastButton.Prototype
         public void Announce(string message)
         {
             LastAnnouncement = message;
+            Debug.Log("LAST_BUTTON_EVENT " + message);
             Changed?.Invoke();
         }
     }

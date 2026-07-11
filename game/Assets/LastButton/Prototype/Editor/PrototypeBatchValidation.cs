@@ -57,8 +57,10 @@ namespace LastButton.Prototype.Editor
 
             GameObject root = GameObject.Find("LAST_BUTTON_PROTOTYPE_ROOT");
             Require(root != null, "Prototype world root should be created.");
-            Require(UnityEngine.Object.FindObjectsByType<PrototypePlayer>().Length == 1,
-                "Prototype world should contain one player.");
+            Require(UnityEngine.Object.FindObjectsByType<PrototypePlayer>().Length == 4,
+                "Prototype world should contain one human player and three bots.");
+            Require(UnityEngine.Object.FindObjectsByType<PrototypeBot>().Length == 3,
+                "Prototype world should contain three simulated crew bots.");
             Require(UnityEngine.Object.FindObjectsByType<RepairConsole>().Length == 3,
                 "Prototype world should contain three repair consoles.");
             Require(UnityEngine.Object.FindObjectsByType<CarryableKeycard>().Length == 1,

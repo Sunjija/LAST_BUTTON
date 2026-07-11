@@ -15,10 +15,16 @@ namespace LastButton.Prototype
         private Transform holdPoint;
         private float verticalVelocity;
         private float pitch;
+        private bool botControlled;
+        private Vector3 botMoveInput;
+        private Vector3 knockbackVelocity;
+        private float pushImmuneUntil;
         private PrototypeInteractionTarget activeTarget;
         private float holdTime;
 
         public CarryableKeycard CarriedKeycard { get; private set; }
+        public bool IsBot => botControlled;
+        public string DisplayName { get; private set; } = "PLAYER";
         public string CurrentPrompt { get; private set; }
         public float InteractionProgress01 { get; private set; }
 
@@ -27,42 +33,87 @@ namespace LastButton.Prototype
             controller = GetComponent<CharacterController>();
             viewCamera = GetComponentInChildren<Camera>();
             holdPoint = new GameObject("KeycardHoldPoint").transform;
-            holdPoint.SetParent(viewCamera.transform, false);
-            holdPoint.localPosition = new Vector3(0.35f, -0.25f, 0.8f);
+            holdPoint.SetParent(viewCamera != null ? viewCamera.transform : transform, false);
+            holdPoint.localPosition = viewCamera != null
+                ? new Vector3(0.35f, -0.25f, 0.8f)
+                : new Vector3(0.45f, 1.1f, 0.35f);
         }
 
         private void Start()
         {
-            LockCursor(true);
+            if (!botControlled)
+            {
+                LockCursor(true);
+            }
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (!botControlled && Input.GetKeyDown(KeyCode.Escape))
             {
                 LockCursor(false);
             }
 
-            if (Input.GetMouseButtonDown(0) && Cursor.lockState == CursorLockMode.None)
+            if (!botControlled && Input.GetMouseButtonDown(0) && Cursor.lockState == CursorLockMode.None)
             {
                 LockCursor(true);
             }
 
             if (PrototypeState.Instance == null || PrototypeState.Instance.Outcome == PrototypeOutcome.None)
             {
-                UpdateLook();
-                UpdateMovement();
-                UpdateInteraction();
-                UpdateCarryAndPush();
+                if (botControlled)
+                {
+                    UpdateMovement(botMoveInput);
+                }
+                else
+                {
+                    UpdateLook();
+                    Vector3 localInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
+                    UpdateMovement(transform.TransformDirection(localInput));
+                    UpdateInteraction();
+                    UpdateCarryAndPush();
+                }
             }
             else
             {
                 ResetInteraction();
             }
 
-            if (Input.GetKeyDown(KeyCode.R))
+            if (!botControlled && Input.GetKeyDown(KeyCode.R))
             {
                 PrototypeBootstrap.Rebuild();
+            }
+        }
+
+        public void ConfigureBot(string displayName)
+        {
+            botControlled = true;
+            DisplayName = displayName;
+            CurrentPrompt = string.Empty;
+        }
+
+        public void SetBotMove(Vector3 worldDirection)
+        {
+            botMoveInput = Vector3.ClampMagnitude(worldDirection, 1f);
+            Vector3 planar = new Vector3(botMoveInput.x, 0f, botMoveInput.z);
+            if (planar.sqrMagnitude > 0.01f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(planar.normalized, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 7f);
+            }
+        }
+
+        public void PushOther(PrototypePlayer target)
+        {
+            if (target == null || target == this)
+            {
+                return;
+            }
+
+            Vector3 direction = (target.transform.position - transform.position).normalized;
+            if (target.ReceivePush(direction))
+            {
+                PrototypeState.Instance?.Announce($"{DisplayName}이(가) {target.DisplayName}을(를) 밀쳤습니다.");
             }
         }
 
@@ -91,9 +142,17 @@ namespace LastButton.Prototype
             dropped.Drop(transform.position + transform.forward + Vector3.up * 0.5f, impulse);
         }
 
-        public void ReceivePush(Vector3 direction)
+        public bool ReceivePush(Vector3 direction)
         {
+            if (Time.time < pushImmuneUntil)
+            {
+                return false;
+            }
+
+            pushImmuneUntil = Time.time + 1.75f;
+            knockbackVelocity += direction.normalized * pushForce + Vector3.up * 2.5f;
             DropKeycard(direction.normalized * pushForce);
+            return true;
         }
 
         private void UpdateLook()
@@ -110,11 +169,10 @@ namespace LastButton.Prototype
             viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
 
-        private void UpdateMovement()
+        private void UpdateMovement(Vector3 worldInput)
         {
-            Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
-            input = Vector3.ClampMagnitude(input, 1f);
-            Vector3 velocity = transform.TransformDirection(input) * moveSpeed;
+            Vector3 input = Vector3.ClampMagnitude(worldInput, 1f);
+            Vector3 velocity = input * moveSpeed;
 
             if (controller.isGrounded && verticalVelocity < 0f)
             {
@@ -122,7 +180,9 @@ namespace LastButton.Prototype
             }
 
             verticalVelocity += Physics.gravity.y * Time.deltaTime;
-            velocity.y = verticalVelocity;
+            knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, Time.deltaTime * 3.5f);
+            velocity += knockbackVelocity;
+            velocity.y += verticalVelocity;
             controller.Move(velocity * Time.deltaTime);
         }
 
@@ -174,7 +234,7 @@ namespace LastButton.Prototype
             PrototypePlayer otherPlayer = hit.collider.GetComponentInParent<PrototypePlayer>();
             if (otherPlayer != null && otherPlayer != this)
             {
-                otherPlayer.ReceivePush(viewCamera.transform.forward);
+                PushOther(otherPlayer);
             }
 
             Rigidbody body = hit.collider.attachedRigidbody;

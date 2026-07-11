@@ -31,6 +31,11 @@ namespace LastButton.Prototype
         private static void BuildWorld()
         {
             Application.targetFrameRate = 120;
+#if UNITY_EDITOR
+            Time.timeScale = 1f;
+#else
+            Time.timeScale = Application.isBatchMode ? 8f : 1f;
+#endif
 
             GameObject root = new GameObject(RootName);
             WorldRoot = root.transform;
@@ -40,6 +45,9 @@ namespace LastButton.Prototype
             CreateRoom(root.transform);
             PrototypePlayer player = CreatePlayer(root.transform);
             CreateGameplayObjects(root.transform);
+            CreateBot(root.transform, "MISO", new Vector3(-3f, 1f, -15f), new Color(0.95f, 0.35f, 0.5f), false, 0);
+            CreateBot(root.transform, "BOLT", new Vector3(3f, 1f, -15f), new Color(0.3f, 0.8f, 1f), false, 1);
+            CreateBot(root.transform, "RAT", new Vector3(0f, 1f, -12f), new Color(1f, 0.65f, 0.1f), true, 2);
 
             PrototypeHud hud = root.AddComponent<PrototypeHud>();
             hud.SetPlayer(player);
@@ -60,20 +68,24 @@ namespace LastButton.Prototype
 
         private static void CreateRoom(Transform parent)
         {
-            CreateBlock("Floor", new Vector3(0f, -0.5f, 2f), new Vector3(20f, 1f, 24f), new Color(0.18f, 0.2f, 0.23f), parent);
-            CreateBlock("Wall North", new Vector3(0f, 2f, 14f), new Vector3(20f, 5f, 0.5f), new Color(0.1f, 0.12f, 0.15f), parent);
-            CreateBlock("Wall South", new Vector3(0f, 2f, -10f), new Vector3(20f, 5f, 0.5f), new Color(0.1f, 0.12f, 0.15f), parent);
-            CreateBlock("Wall East", new Vector3(10f, 2f, 2f), new Vector3(0.5f, 5f, 24f), new Color(0.1f, 0.12f, 0.15f), parent);
-            CreateBlock("Wall West", new Vector3(-10f, 2f, 2f), new Vector3(0.5f, 5f, 24f), new Color(0.1f, 0.12f, 0.15f), parent);
-            CreateBlock("Divider Left", new Vector3(-3.5f, 1.5f, 4f), new Vector3(0.4f, 3f, 9f), new Color(0.14f, 0.16f, 0.19f), parent);
-            CreateBlock("Divider Right", new Vector3(3.5f, 1.5f, 4f), new Vector3(0.4f, 3f, 9f), new Color(0.14f, 0.16f, 0.19f), parent);
+            CreateBlock("Floor", new Vector3(0f, -0.5f, 0f), new Vector3(44f, 1f, 44f), new Color(0.14f, 0.16f, 0.2f), parent);
+            CreateBlock("Wall North", new Vector3(0f, 2f, 22f), new Vector3(44f, 5f, 0.5f), new Color(0.08f, 0.1f, 0.13f), parent);
+            CreateBlock("Wall South", new Vector3(0f, 2f, -22f), new Vector3(44f, 5f, 0.5f), new Color(0.08f, 0.1f, 0.13f), parent);
+            CreateBlock("Wall East", new Vector3(22f, 2f, 0f), new Vector3(0.5f, 5f, 44f), new Color(0.08f, 0.1f, 0.13f), parent);
+            CreateBlock("Wall West", new Vector3(-22f, 2f, 0f), new Vector3(0.5f, 5f, 44f), new Color(0.08f, 0.1f, 0.13f), parent);
+
+            CreateZone("ENGINEERING", new Vector3(-16f, 0.03f, -12f), new Color(0.05f, 0.25f, 0.3f), parent);
+            CreateZone("LIFE SUPPORT", new Vector3(-16f, 0.03f, 10f), new Color(0.05f, 0.3f, 0.18f), parent);
+            CreateZone("REACTOR", new Vector3(0f, 0.03f, 8f), new Color(0.28f, 0.12f, 0.04f), parent);
+            CreateZone("EXECUTIVE", new Vector3(16f, 0.03f, -12f), new Color(0.3f, 0.22f, 0.04f), parent);
+            CreateZone("ESCAPE POD", new Vector3(16f, 0.03f, 9f), new Color(0.32f, 0.04f, 0.05f), parent);
         }
 
         private static PrototypePlayer CreatePlayer(Transform parent)
         {
             GameObject playerObject = new GameObject("Prototype Player");
             playerObject.transform.SetParent(parent);
-            playerObject.transform.position = new Vector3(0f, 1.1f, -7f);
+            playerObject.transform.position = new Vector3(0f, 1.1f, -18f);
 
             CharacterController controller = playerObject.AddComponent<CharacterController>();
             controller.height = 1.8f;
@@ -94,9 +106,9 @@ namespace LastButton.Prototype
         {
             Vector3[] consolePositions =
             {
-                new Vector3(-7f, 0.75f, -5f),
-                new Vector3(-7f, 0.75f, 1f),
-                new Vector3(0f, 0.75f, 3f)
+                new Vector3(-16f, 0.75f, -12f),
+                new Vector3(-16f, 0.75f, 10f),
+                new Vector3(0f, 0.75f, 8f)
             };
 
             for (int i = 0; i < consolePositions.Length; i++)
@@ -106,34 +118,67 @@ namespace LastButton.Prototype
                 CreateLabel(console.transform, "REPAIR", Vector3.up * 1.1f);
             }
 
-            GameObject keycard = CreateBlock("Executive Keycard", new Vector3(-6.5f, 0.45f, 8f), new Vector3(0.9f, 0.12f, 0.55f), new Color(1f, 0.8f, 0.1f), parent);
+            GameObject keycard = CreateBlock("Executive Keycard", new Vector3(16f, 0.45f, -12f), new Vector3(0.9f, 0.12f, 0.55f), new Color(1f, 0.8f, 0.1f), parent);
             keycard.AddComponent<Rigidbody>();
             keycard.AddComponent<CarryableKeycard>();
             CreateLabel(keycard.transform, "KEYCARD", Vector3.up * 0.65f);
 
-            GameObject charger = CreateBlock("Escape Pod Charger", new Vector3(6.5f, 0.8f, 1f), new Vector3(2f, 1.6f, 1f), new Color(0.2f, 0.4f, 1f), parent);
+            GameObject charger = CreateBlock("Escape Pod Charger", new Vector3(16f, 0.8f, 4f), new Vector3(2f, 1.6f, 1f), new Color(0.2f, 0.4f, 1f), parent);
             charger.AddComponent<EscapePodCharger>();
             CreateLabel(charger.transform, "POD CHARGER", Vector3.up * 1.15f);
 
             GameObject button = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             button.name = "LAST BUTTON";
             button.transform.SetParent(parent);
-            button.transform.position = new Vector3(6.5f, 0.6f, 8f);
+            button.transform.position = new Vector3(16f, 0.6f, 16f);
             button.transform.localScale = new Vector3(1.2f, 0.25f, 1.2f);
             button.GetComponent<Renderer>().material = CreateMaterial(new Color(1f, 0.05f, 0.05f));
             button.AddComponent<LastButtonTarget>();
             CreateLabel(button.transform, "LAST BUTTON", Vector3.up * 1.25f);
 
-            GameObject commonExit = CreateBlock("Common Exit", new Vector3(0f, 0.1f, 12.5f), new Vector3(4f, 0.2f, 2f), new Color(0.2f, 1f, 0.35f), parent);
+            GameObject commonExit = CreateBlock("Common Exit", new Vector3(0f, 0.1f, 20f), new Vector3(5f, 0.2f, 2f), new Color(0.2f, 1f, 0.35f), parent);
             commonExit.AddComponent<CommonExitTarget>();
             CreateLabel(commonExit.transform, "COMMON EXIT", Vector3.up * 0.75f);
 
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 24; i++)
             {
-                GameObject crate = CreateBlock($"Push Crate {i + 1}", new Vector3(-2f + i % 4 * 1.3f, 0.4f, -1f + i / 4 * 1.5f), Vector3.one * 0.8f, new Color(0.55f, 0.3f, 0.12f), parent);
+                float x = -10f + (i % 6) * 4f;
+                float z = -8f + (i / 6) * 5f;
+                GameObject crate = CreateBlock($"Push Crate {i + 1}", new Vector3(x, 0.4f, z), Vector3.one * 0.8f, new Color(0.55f, 0.3f, 0.12f), parent);
                 Rigidbody body = crate.AddComponent<Rigidbody>();
                 body.mass = 2f;
             }
+        }
+
+        private static void CreateBot(Transform parent, string displayName, Vector3 position, Color color, bool opportunist, int consoleIndex)
+        {
+            GameObject botObject = new GameObject("Bot " + displayName);
+            botObject.transform.SetParent(parent);
+            botObject.transform.position = position;
+
+            CharacterController controller = botObject.AddComponent<CharacterController>();
+            controller.height = 1.8f;
+            controller.radius = 0.45f;
+            controller.center = new Vector3(0f, 0.9f, 0f);
+
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            body.transform.SetParent(botObject.transform, false);
+            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            body.transform.localScale = new Vector3(0.8f, 0.9f, 0.8f);
+            body.GetComponent<Renderer>().material = CreateMaterial(color);
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+
+            PrototypePlayer player = botObject.AddComponent<PrototypePlayer>();
+            PrototypeBot bot = botObject.AddComponent<PrototypeBot>();
+            bot.Configure(displayName, opportunist, consoleIndex);
+            CreateLabel(botObject.transform, opportunist ? displayName + " ?" : displayName, Vector3.up * 2.25f);
+        }
+
+        private static void CreateZone(string label, Vector3 position, Color color, Transform parent)
+        {
+            GameObject zone = CreateBlock(label + " Zone", position, new Vector3(8f, 0.05f, 8f), color, parent);
+            CreateLabel(zone.transform, label, Vector3.up * 0.35f);
         }
 
         private static GameObject CreateBlock(string name, Vector3 position, Vector3 scale, Color color, Transform parent)

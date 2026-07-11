@@ -9,7 +9,7 @@
 
 ## 프로토타입
 
-- [Unity 회색 박스 프로토타입](game/README.md)
+- [Unity 회색 박스 프로토타입](game/README.md) — 확장 맵, 실제 넉백, 수리·배신·추격 봇 3명 포함
 - Unity 6.3 LTS에서 `game` 폴더를 열고 빈 Scene에서 Play하면 테스트 공간이 자동 생성됩니다.
 
 ## 현재 방향

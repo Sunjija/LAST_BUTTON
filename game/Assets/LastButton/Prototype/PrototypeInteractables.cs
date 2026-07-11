@@ -56,6 +56,7 @@ namespace LastButton.Prototype
 
         public override float HoldSeconds => 0.25f;
         public bool IsCarried => carried;
+        public bool SabotageAvailable { get; private set; } = true;
 
         private void Awake()
         {
@@ -109,6 +110,17 @@ namespace LastButton.Prototype
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
             body.AddForce(impulse, ForceMode.Impulse);
+        }
+
+        public bool TryConsumeSabotage()
+        {
+            if (!SabotageAvailable)
+            {
+                return false;
+            }
+
+            SabotageAvailable = false;
+            return true;
         }
     }
 

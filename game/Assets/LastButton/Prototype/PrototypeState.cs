@@ -18,6 +18,7 @@ namespace LastButton.Prototype
         public float RepairProgress { get; private set; } = 0.2f;
         public float TimeRemaining { get; private set; } = 360f;
         public bool PodCharged { get; private set; }
+        public float PodChargedAt { get; private set; } = -1f;
         public bool KeycardWasTaken { get; private set; }
         public float KeycardTakenAt { get; private set; } = -1f;
         public PrototypeOutcome Outcome { get; private set; }
@@ -96,6 +97,7 @@ namespace LastButton.Prototype
 
             RepairProgress = Mathf.Clamp01(RepairProgress - 0.1f);
             PodCharged = true;
+            PodChargedAt = Time.time;
             Announce("비인가 전력 사용 감지. 개인 포드 충전 완료.");
             return true;
         }

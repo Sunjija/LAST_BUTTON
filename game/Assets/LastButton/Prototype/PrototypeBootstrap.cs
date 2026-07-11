@@ -79,6 +79,10 @@ namespace LastButton.Prototype
             CreateZone("REACTOR", new Vector3(0f, 0.03f, 8f), new Color(0.28f, 0.12f, 0.04f), parent);
             CreateZone("EXECUTIVE", new Vector3(16f, 0.03f, -12f), new Color(0.3f, 0.22f, 0.04f), parent);
             CreateZone("ESCAPE POD", new Vector3(16f, 0.03f, 9f), new Color(0.32f, 0.04f, 0.05f), parent);
+
+            CreateBlock("Escape Cover West", new Vector3(12f, 1.5f, 9f), new Vector3(1f, 3f, 6f), new Color(0.11f, 0.13f, 0.17f), parent);
+            CreateBlock("Escape Cover East", new Vector3(20f, 1.5f, 12f), new Vector3(1f, 3f, 6f), new Color(0.11f, 0.13f, 0.17f), parent);
+            CreateBlock("Escape Cover Center", new Vector3(15f, 1.5f, 13f), new Vector3(4f, 3f, 1f), new Color(0.11f, 0.13f, 0.17f), parent);
         }
 
         private static PrototypePlayer CreatePlayer(Transform parent)

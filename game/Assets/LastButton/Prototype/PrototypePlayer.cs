@@ -9,6 +9,7 @@ namespace LastButton.Prototype
         [SerializeField] private float lookSensitivity = 2f;
         [SerializeField] private float interactDistance = 3f;
         [SerializeField] private float pushForce = 7f;
+        [SerializeField] private float maxSprintEnergy = 4f;
 
         private CharacterController controller;
         private Camera viewCamera;
@@ -19,18 +20,22 @@ namespace LastButton.Prototype
         private Vector3 botMoveInput;
         private Vector3 knockbackVelocity;
         private float pushImmuneUntil;
+        private float sprintEnergy;
         private PrototypeInteractionTarget activeTarget;
         private float holdTime;
 
         public CarryableKeycard CarriedKeycard { get; private set; }
         public bool IsBot => botControlled;
         public string DisplayName { get; private set; } = "PLAYER";
+        public float Sprint01 => maxSprintEnergy <= 0f ? 0f : sprintEnergy / maxSprintEnergy;
+        public int SabotageCharges => CarriedKeycard != null && CarriedKeycard.SabotageAvailable ? 1 : 0;
         public string CurrentPrompt { get; private set; }
         public float InteractionProgress01 { get; private set; }
 
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
+            sprintEnergy = maxSprintEnergy;
             viewCamera = GetComponentInChildren<Camera>();
             holdPoint = new GameObject("KeycardHoldPoint").transform;
             holdPoint.SetParent(viewCamera != null ? viewCamera.transform : transform, false);
@@ -89,6 +94,7 @@ namespace LastButton.Prototype
         {
             botControlled = true;
             DisplayName = displayName;
+            moveSpeed = 4.15f;
             CurrentPrompt = string.Empty;
         }
 
@@ -115,6 +121,42 @@ namespace LastButton.Prototype
             {
                 PrototypeState.Instance?.Announce($"{DisplayName}이(가) {target.DisplayName}을(를) 밀쳤습니다.");
             }
+        }
+
+        public bool UseSabotage()
+        {
+            if (CarriedKeycard == null || !CarriedKeycard.SabotageAvailable)
+            {
+                return false;
+            }
+
+            PrototypeBot[] bots = Object.FindObjectsByType<PrototypeBot>();
+            bool hasTarget = false;
+            foreach (PrototypeBot bot in bots)
+            {
+                if (bot.IsOpportunist || Vector3.Distance(transform.position, bot.transform.position) > 8f)
+                {
+                    continue;
+                }
+
+                hasTarget = true;
+            }
+
+            if (!hasTarget || !CarriedKeycard.TryConsumeSabotage())
+            {
+                return false;
+            }
+
+            foreach (PrototypeBot bot in bots)
+            {
+                if (!bot.IsOpportunist && Vector3.Distance(transform.position, bot.transform.position) <= 8f)
+                {
+                    bot.Stun(5f);
+                }
+            }
+
+            PrototypeState.Instance?.Announce($"{DisplayName}이(가) 보안 교란기를 사용했습니다. 주변 추격자가 5초간 정지합니다.");
+            return true;
         }
 
         public bool TryCarry(CarryableKeycard keycard)
@@ -172,7 +214,22 @@ namespace LastButton.Prototype
         private void UpdateMovement(Vector3 worldInput)
         {
             Vector3 input = Vector3.ClampMagnitude(worldInput, 1f);
-            Vector3 velocity = input * moveSpeed;
+            float appliedSpeed = moveSpeed;
+            bool sprinting = !botControlled
+                && Input.GetKey(KeyCode.LeftShift)
+                && sprintEnergy > 0f
+                && input.sqrMagnitude > 0.01f;
+            if (sprinting)
+            {
+                appliedSpeed *= 1.55f;
+                sprintEnergy = Mathf.Max(0f, sprintEnergy - Time.deltaTime);
+            }
+            else
+            {
+                sprintEnergy = Mathf.Min(maxSprintEnergy, sprintEnergy + Time.deltaTime * 0.65f);
+            }
+
+            Vector3 velocity = input * appliedSpeed;
 
             if (controller.isGrounded && verticalVelocity < 0f)
             {
@@ -218,6 +275,11 @@ namespace LastButton.Prototype
             if (Input.GetKeyDown(KeyCode.G))
             {
                 DropKeycard(transform.forward * 2f);
+            }
+
+            if (Input.GetKeyDown(KeyCode.F))
+            {
+                UseSabotage();
             }
 
             if (!Input.GetKeyDown(KeyCode.Q))

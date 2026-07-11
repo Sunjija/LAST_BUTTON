@@ -23,18 +23,19 @@ namespace LastButton.Prototype
                 return;
             }
 
-            GUI.Box(new Rect(20f, 20f, 390f, 210f), string.Empty);
+            GUI.Box(new Rect(20f, 20f, 410f, 245f), string.Empty);
             GUI.Label(new Rect(35f, 30f, 330f, 32f), "LAST BUTTON — CORE PROTOTYPE", titleStyle);
             int minutes = Mathf.FloorToInt(state.TimeRemaining / 60f);
             int seconds = Mathf.FloorToInt(state.TimeRemaining % 60f);
-            GUI.Label(new Rect(35f, 66f, 360f, 150f),
+            GUI.Label(new Rect(35f, 66f, 380f, 185f),
                 $"남은 시간: {minutes:00}:{seconds:00}\n" +
                 $"공동 복구율: {Mathf.RoundToInt(state.RepairProgress * 100f)}%\n" +
                 $"공동 탈출 예상 보상: {state.CommonReward:N0}\n" +
                 $"개인 탈출 예상 보상: {state.SoloReward:N0}\n" +
                 $"키카드: {(player.CarriedKeycard != null ? "소지 중" : state.KeycardWasTaken ? "분실/바닥" : "보안함") }\n" +
                 $"개인 포드: {(state.PodCharged ? "충전 완료" : "미충전")}\n" +
-                "WASD 이동 / E 상호작용 / G 내려놓기 / Q 밀치기 / R 초기화",
+                $"질주 에너지: {Mathf.RoundToInt(player.Sprint01 * 100f)}% / 보안 교란기: {player.SabotageCharges}회\n" +
+                "WASD 이동 / Shift 질주 / E 상호작용 / F 교란기 / G 내려놓기 / Q 밀치기 / R 초기화",
                 bodyStyle);
 
             PrototypeBot[] bots = Object.FindObjectsByType<PrototypeBot>();

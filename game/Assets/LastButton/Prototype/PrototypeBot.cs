@@ -11,9 +11,11 @@ namespace LastButton.Prototype
         private PrototypeInteractionTarget activeTarget;
         private float actionProgress;
         private float pushReadyAt;
+        private float stunnedUntil;
 
         public string Activity { get; private set; } = "대기 중";
         public bool IsOpportunist => opportunist;
+        public bool IsStunned => Time.time < stunnedUntil;
 
         public void Configure(string displayName, bool canBetray, int consoleIndex)
         {
@@ -32,10 +34,23 @@ namespace LastButton.Prototype
                 return;
             }
 
+            if (IsStunned)
+            {
+                Activity = $"보안 교란됨 ({Mathf.CeilToInt(stunnedUntil - Time.time)}초)";
+                player.SetBotMove(Vector3.zero);
+                ResetAction(null);
+                return;
+            }
+
             PrototypePlayer carrier = FindKeycardCarrier();
 
             if (player.CarriedKeycard != null)
             {
+                if (opportunist && state.PodCharged)
+                {
+                    TryUseSabotageNearSecurity();
+                }
+
                 PrototypeInteractionTarget destination = state.PodCharged
                     ? FindOne<LastButtonTarget>()
                     : FindOne<EscapePodCharger>();
@@ -51,8 +66,10 @@ namespace LastButton.Prototype
                 return;
             }
 
+            bool chargeAlertMature = state.PodCharged && Time.time - state.PodChargedAt >= 4.5f;
+            bool keycardMissingTooLong = Time.time - state.KeycardTakenAt >= 22f;
             bool loyalistsAreSuspicious = carrier != null
-                && (state.PodCharged || Time.time - state.KeycardTakenAt >= 12f);
+                && (chargeAlertMature || keycardMissingTooLong);
             bool assignedSecurity = preferredConsole == 0;
             if (!opportunist && assignedSecurity && loyalistsAreSuspicious)
             {
@@ -103,6 +120,30 @@ namespace LastButton.Prototype
             {
                 player.PushOther(target);
                 pushReadyAt = Time.time + 4f;
+            }
+        }
+
+        public void Stun(float seconds)
+        {
+            stunnedUntil = Mathf.Max(stunnedUntil, Time.time + seconds);
+            player?.SetBotMove(Vector3.zero);
+        }
+
+        private void TryUseSabotageNearSecurity()
+        {
+            if (player.SabotageCharges <= 0)
+            {
+                return;
+            }
+
+            PrototypeBot[] bots = Object.FindObjectsByType<PrototypeBot>();
+            foreach (PrototypeBot bot in bots)
+            {
+                if (!bot.opportunist && Vector3.Distance(transform.position, bot.transform.position) <= 7.5f)
+                {
+                    player.UseSabotage();
+                    return;
+                }
             }
         }
 
